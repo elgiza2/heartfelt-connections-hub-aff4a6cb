@@ -19,7 +19,6 @@ import SidebarSubNav from "@/components/layout/SidebarSubNav";
 import { pathForZone, stripZonePrefix } from "@/lib/zoneRouting";
 import { prefetchRoute as sharedPrefetchRoute } from "@/hooks/usePrefetchRoute";
 import { t as uiT, useUserLang } from "@/lib/authI18n";
-import { useSidebarPins } from "@/lib/sidebarPins";
 import megsyCardImg from "@/assets/megsy-models-card.webp.asset.json";
 
 interface Conversation {
@@ -384,7 +383,6 @@ const AppSidebar = ({
     [closeInline, location.pathname, navigate, onClose],
   );
 
-  const sidebarPins = useSidebarPins();
   const currentAppPath = stripZonePrefix(location.pathname);
   const resolvedMobileSide =
     mobileSide ??
