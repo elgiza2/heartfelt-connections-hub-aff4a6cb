@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.is_workspace_member(uuid, uuid) TO anon;
