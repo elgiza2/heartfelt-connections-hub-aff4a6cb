@@ -431,15 +431,9 @@ const ReferralsPage = () => {
   const content = (
     <div className={`mx-auto flex w-full max-w-[620px] flex-col px-5 ${onRewards ? "pb-10" : "pb-6"} pt-3 md:pt-7`}>
       {onRewards || isDesktop ? null : (
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open menu"
-          className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent text-foreground transition active:scale-95"
-        >
-          <SidebarToggleIcon />
-        </button>
+        <MobileSidebarButton edge onClick={() => setSidebarOpen(true)} />
       )}
+
       <div className="flex flex-1 flex-col">
         <Outlet />
       </div>
