@@ -5,6 +5,13 @@ interface MobileSidebarButtonProps {
   className?: string;
   ariaLabel?: string;
   testId?: string;
+  /**
+   * Anchor the button to the inline-start edge of the viewport (same spot the
+   * chat header uses) instead of letting it flow inside a centered container.
+   * Keeps the toggle in an identical position on every page and in both
+   * text directions.
+   */
+  edge?: boolean;
 }
 
 /** Unified mobile sidebar toggle button used across all pages. */
@@ -13,6 +20,7 @@ export function MobileSidebarButton({
   className,
   ariaLabel = "Open menu",
   testId,
+  edge = false,
 }: MobileSidebarButtonProps) {
   return (
     <button
@@ -23,9 +31,12 @@ export function MobileSidebarButton({
       style={{ border: "none", outline: "none", boxShadow: "none" }}
       className={cn(
         "md:hidden w-11 h-11 rounded-2xl flex items-center justify-center text-foreground bg-transparent border-0 active:scale-95 transition",
+        edge &&
+          "fixed z-30 start-3 top-[max(env(safe-area-inset-top),0.25rem)]",
         className,
       )}
     >
+
       <svg
         width="22"
         height="22"
