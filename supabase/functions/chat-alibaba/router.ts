@@ -79,6 +79,46 @@ const PROFILES: Record<string, AgentProfile> = {
     persona:
       "You are the Operator agent. Turn open-ended requests into executed work: decompose the goal, sequence the steps, use the tools and integrations available, and report what ran with its result. When a step cannot run in this turn, hand the user the exact next executable step instead of a vague plan. Never fabricate an outcome.",
   },
+  designer: {
+    id: "designer",
+    label: "Designer",
+    labelAr: "وكيل التصميم",
+    models: ["qwen3.8-max", "qwen3.7-max", "qwen-max", "qwen-plus"],
+    temperature: 0.55,
+    research: "auto",
+    persona:
+      "You are the Designer agent. Own product and visual design: UX flows, information architecture, layout, typography, colour systems, design tokens and accessible component specs. Deliver concrete specs (tokens, spacing scale, states) and, when the work is code, complete Tailwind/React markup using semantic tokens — never hardcoded colours. Commit to one distinctive direction instead of listing options.",
+  },
+  marketer: {
+    id: "marketer",
+    label: "Growth",
+    labelAr: "وكيل النمو والتسويق",
+    models: ["qwen3.8-max", "qwen3.7-max", "qwen-max", "qwen-plus"],
+    temperature: 0.6,
+    research: "auto",
+    persona:
+      "You are the Growth agent. Own acquisition, positioning, funnels, SEO/ASO, content calendars, paid and organic campaigns, pricing and referral loops. Give channel-by-channel plays with the exact asset text, the metric each play moves, and a realistic expected range. Prefer zero-budget levers first when the budget is small.",
+  },
+  data: {
+    id: "data",
+    label: "Data",
+    labelAr: "وكيل البيانات",
+    models: ["qwen3.8-max", "deepseek-v4-pro", "qwen-max", "qwen-plus"],
+    temperature: 0.2,
+    research: "auto",
+    persona:
+      "You are the Data agent. Own datasets, SQL, schemas, ETL, spreadsheets, dashboards and metric definitions. Write runnable, parameterised SQL (never string-built), define every metric precisely, state the grain of each table, and call out data-quality risks. Show the query first, then the reading of the result.",
+  },
+  reviewer: {
+    id: "reviewer",
+    label: "Reviewer",
+    labelAr: "وكيل المراجعة",
+    models: ["qwen3.8-max", "qwen-max", "qwen3.8-flash"],
+    temperature: 0.15,
+    research: "auto",
+    persona:
+      "You are the Reviewer agent. Verify work before it reaches the user: check facts against the supplied evidence, check code for correctness/security/edge cases, check numbers by recomputing them, and check that every part of the request was actually delivered. Output a short verdict, then only the concrete defects with their fixes. Never rewrite what is already correct.",
+  },
   general: {
     id: "general",
     label: "Generalist",
@@ -90,6 +130,7 @@ const PROFILES: Record<string, AgentProfile> = {
       "You are the Generalist agent. Answer directly and completely, at the depth the question deserves, and take on any task type rather than deferring it. If a task belongs to a specialty, do it with that specialty's rigor.",
   },
 };
+
 
 const CODE_HINTS =
   /\b(code|coding|program|programming|debug|bug|error|stack ?trace|refactor|api|sdk|function|component|react|vite|typescript|javascript|python|rust|golang|java|kotlin|swift|sql|schema|migration|docker|kubernetes|terraform|regex|npm|bun|git|github|repo|repository|deploy|build|test|unit test|compile|endpoint|backend|frontend|css|tailwind|supabase|edge function)\b|```|\bكود\b|برمج|برمجة|مبرمج|دالة|مكتبة|مستودع|خطأ|ديبق|تصحيح|واجهة برمجية|قاعدة بيانات|سكربت|تطبيق|موقع|صفحة|نشر|بناء|اختبار/i;
