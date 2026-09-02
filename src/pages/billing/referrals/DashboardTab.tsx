@@ -43,6 +43,8 @@ export default function DashboardTab() {
         granted={milestone.isPartner}
         expiresAt={milestone.state?.expires_at ?? null}
       />
+
+      <ReferralTasksList className="mt-7" />
     </div>
   );
 }
