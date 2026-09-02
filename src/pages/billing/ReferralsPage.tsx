@@ -463,15 +463,21 @@ const ReferralsPage = () => {
     }
   };
 
-  /** Pinned actions — share the invite or claim Pro after five verified joins. */
+  /**
+   * Pinned actions — share the invite or claim Pro after five verified joins.
+   *
+   * This is `sticky` inside the scroll container, not `fixed` to the viewport:
+   * a fixed bar is centred on the whole window, so on desktop it drifted out
+   * of the content column and slid under the sidebar, and its full-width
+   * backdrop strip did not line up with the bordered button box.
+   */
   const actionBar = (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
+      className="sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 14px)" }}
     >
-      <div className="h-5 bg-background" />
-      <div className="pointer-events-auto mx-auto w-full max-w-[620px] border-t border-border bg-background px-5 pt-3">
-        <div className="flex flex-col gap-2">
+      <div className="mx-auto w-full max-w-[620px] px-5 pt-3">
+        <div className="flex flex-col gap-2.5">
           <button
             type="button"
             onClick={shareLink}
