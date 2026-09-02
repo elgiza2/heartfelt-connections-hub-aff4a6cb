@@ -97,7 +97,7 @@ function pickKind(mime: string, hint?: string): "photo" | "video" | "document" {
   return "document";
 }
 
-Deno.serve(async (req) => {
+export async function handleTelegramStorage(req: Request, body: any): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
 
@@ -112,7 +112,6 @@ Deno.serve(async (req) => {
     if (!userId) return json({ ok: false, error: "unauthorized" }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
-    const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "upload");
 
     if (action === "status") {
@@ -278,4 +277,4 @@ Deno.serve(async (req) => {
     console.error("telegram-storage error:", msg);
     return json({ ok: false, error: msg }, 500);
   }
-});
+}
