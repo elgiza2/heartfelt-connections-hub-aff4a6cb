@@ -271,14 +271,29 @@ export async function uploadAttachmentDataUrl(dataUrl: string, name = "upload"):
     const ext = (mime.split("/")[1] || "png").replace(/[^a-z0-9]/gi, "");
     const uid = user?.id;
     if (!uid) return null;
+    const viaTelegram = async (): Promise<string | null> => {
+      try {
+        const { uploadDataUrlToTelegram } = await import("@/lib/telegramStorage");
+        const res = await uploadDataUrlToTelegram(dataUrl, `${slug(name) || "file"}.${ext}`);
+        return res.url;
+      } catch {
+        return null;
+      }
+    };
+    // Large attachments go straight to Telegram storage.
+    if (bin.byteLength >= 5 * 1024 * 1024) {
+      const url = await viaTelegram();
+      if (url) return url;
+    }
     const path = `${uid}/coder-attachments/${Date.now()}-${slug(name).replace(/\s+/g, "-") || "file"}.${ext}`;
     const { data, error } = await supabase.storage.from("user-images").upload(path, bin, {
       contentType: mime,
       upsert: false,
     });
-    if (error || !data?.path) return null;
+    if (error || !data?.path) return await viaTelegram();
     return supabase.storage.from("user-images").getPublicUrl(data.path).data.publicUrl || null;
   } catch {
     return null;
   }
 }
+

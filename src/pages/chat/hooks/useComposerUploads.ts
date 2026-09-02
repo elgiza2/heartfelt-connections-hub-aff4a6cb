@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { parseUploadedFile } from "@/lib/parseUploadedFile";
 import { compressImageToDataUrl } from "@/lib/compressImage";
+import { uploadLargeFile } from "@/lib/telegramStorage";
+
 import type { AttachedFile } from "./useAttachments";
 
 async function attachCompressedImage(
@@ -123,24 +125,29 @@ export function useComposerUploads(params: {
 
   const uploadVideoToStorage = useCallback(
     async (file: File): Promise<string | null> => {
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
-      const uid =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const path = `chat-videos/${uid}.${ext}`;
-      const { error } = await supabase.storage
-        .from("user-images")
-        .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
-      if (error) {
-        console.error("[video upload] failed", error);
-        return null;
-      }
-      const { data } = supabase.storage.from("user-images").getPublicUrl(path);
-      return data?.publicUrl ?? null;
+      const toSupabase = async (f: File): Promise<string | null> => {
+        const ext = (f.name.split(".").pop() || "mp4").toLowerCase();
+        const uid =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const path = `chat-videos/${uid}.${ext}`;
+        const { error } = await supabase.storage
+          .from("user-images")
+          .upload(path, f, { contentType: f.type || "video/mp4", upsert: false });
+        if (error) {
+          console.error("[video upload] failed", error);
+          return null;
+        }
+        const { data } = supabase.storage.from("user-images").getPublicUrl(path);
+        return data?.publicUrl ?? null;
+      };
+      const { url } = await uploadLargeFile(file, toSupabase);
+      return url;
     },
     [],
   );
+
 
   const handleImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
