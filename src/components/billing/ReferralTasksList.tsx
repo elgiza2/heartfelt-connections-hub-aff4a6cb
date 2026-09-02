@@ -87,6 +87,9 @@ export default function ReferralTasksList({ className = "" }: { className?: stri
           </li>
         ))}
       </ul>
+      </>
+      )}
     </section>
+
   );
 }
