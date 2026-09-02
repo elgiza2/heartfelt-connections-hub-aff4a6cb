@@ -16637,6 +16637,7 @@ export type Database = {
         Args: { p_external_id: string; p_payment_id: string; p_raw?: Json }
         Returns: Json
       }
+      tmp_migrated_paths: { Args: never; Returns: string[] }
       touch_long_run: { Args: { p_run_id: string }; Returns: undefined }
       update_profile_safe: {
         Args: {
