@@ -228,10 +228,17 @@ const flush = () => {
 const schedule = () => {
   if (scheduled) return;
   scheduled = true;
-  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number })
-    .requestIdleCallback;
-  if (idle) idle(flush);
-  else setTimeout(flush, 32);
+  // An idle callback WITHOUT a timeout can be starved indefinitely on a busy
+  // page (streaming chat, animations, data fetching) — that is why large parts
+  // of the UI used to stay in English. The timeout guarantees the pass runs on
+  // the next frame-ish, so translated text lands before the user reads it.
+  const idle = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (idle) idle(flush, { timeout: 80 });
+  else setTimeout(flush, 16);
 };
 
 const observe = () => {
@@ -249,6 +256,22 @@ export const startEgyptianDom = () => {
     if (queued.length) schedule();
   });
   observe();
+};
+
+/**
+ * Full re-pass over the document. Route changes swap huge subtrees and pages
+ * fill in asynchronously (profile, credits, lists), so a single mutation batch
+ * is not enough — call this after navigation to catch everything the observer
+ * batch may have missed.
+ */
+export const retranslateEgyptianDom = () => {
+  if (typeof document === "undefined" || !observer) return;
+  observer.disconnect();
+  try {
+    walk(document.body);
+  } finally {
+    observe();
+  }
 };
 
 export const stopEgyptianDom = () => {
