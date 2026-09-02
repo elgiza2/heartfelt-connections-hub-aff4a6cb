@@ -16,17 +16,13 @@
    prefers-reduced-motion. Scoped narrowly so we don't fight existing
    surface-specific animations (chat, showcase videos, etc.). */
 
-/* Route transition — driven by <PageTransition/> wrapper */
-.ng-page-enter {
-  animation: ng-page-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
+/* Route transition — intentionally no container animation.
+   The whole-page fade + lift replayed on every navigation (and on the first
+   chat message) and read as a full browser refresh. Pages animate their own
+   content instead. */
+.ng-page-enter,
 .ng-page-enter--chat {
-  animation-name: ng-page-in-chat;
-  animation-duration: 120ms;
+  animation: none;
 }
 
 @keyframes ng-page-in {
@@ -118,8 +114,9 @@ html[data-section="chat"] :where(button, [role="button"], a, .ng-pressable) {
   to   { opacity: 0; transform: translate3d(0, 4px, 0) scale(0.985); }
 }
 
-/* Smooth image + skeleton reveal — avoids jarring pop-in */
-img:not([data-no-fade]) {
+/* Image reveal is opt-in only. A global img fade replayed for every image on
+   every route change, which made navigation look like a page reload. */
+img[data-fade-in] {
   animation: ng-img-in 260ms ease-out both;
 }
 @keyframes ng-img-in { from { opacity: 0 } to { opacity: 1 } }
