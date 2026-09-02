@@ -1,1 +1,4 @@
 project_id = "ltgampdtawuefwwayncx"
+
+[functions.tg-file]
+verify_jwt = false
