@@ -1,5 +1,5 @@
 import { useLocation, type Location } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { isCacheablePath, scheduleSnapshotSave } from "@/lib/pageSnapshot";
 
 /**
