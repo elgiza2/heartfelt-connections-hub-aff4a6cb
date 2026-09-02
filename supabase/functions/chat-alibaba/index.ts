@@ -304,17 +304,16 @@ Deno.serve(async (req) => {
       try {
         if (body.resume_id) send({ event: "resume_id", resumeId: body.resume_id });
 
-        // 1) Semantic plan (overrides keyword routing unless an agent was forced
-        //    or the turn is trivial — both skip the extra model round-trip).
-        const turn = body.agent?.trim() || trivialTurn
-          ? {
-            profile: routed,
-            complexity: (trivialTurn ? "simple" : "standard") as "simple" | "standard",
-            subtasks: [],
-            deliverable: "",
-          }
-          : await plan(call, question, routed);
-        const profile = turn.profile;
+        // 1) Routing. The primary agent plans inside its own loop, so the extra
+        //    planner round-trip is gone; keyword routing only picks the persona
+        //    of the voice that writes the final answer.
+        const profile = routed;
+        const turn = {
+          profile,
+          complexity: (trivialTurn ? "simple" : "standard") as "simple" | "standard",
+          subtasks: [] as { agent: string; goal: string }[],
+          deliverable: "",
+        };
         send({ status: "thinking", agent: profile.id, agent_label: profile.labelAr });
 
         const tierBoost = body.tier === "ultra" || body.tier === "pro";
@@ -326,32 +325,46 @@ Deno.serve(async (req) => {
           : candidates;
 
         let liveContext = "";
-        const wantsResearch = profile.research === "always"
-          ? body.searchEnabled !== false
-          : profile.research === "auto" && body.searchEnabled !== false;
-        if (wantsResearch) {
-          try {
-            const { findings, queries, digest } = await research(
-              admin,
-              question,
-              (frame) => send(frame),
-              profile.research === "always",
-              call,
-              makeRawCall(admin),
-            );
-            liveContext = researchContext(findings, queries, digest);
-          } catch (error) {
-            console.error("chat-alibaba research pre-pass failed", error);
-          }
-        }
+        let agentContext = "";
 
-        // 2) Parallel specialist workers for multi-part jobs.
-        let teamBriefs = "";
-        if (turn.subtasks.length) {
+        if (trivialTurn) {
+          // Fast lane: one short factual turn keeps the old cheap pre-pass so the
+          // first token stays ~1s away.
+          const wantsResearch = profile.research === "always"
+            ? body.searchEnabled !== false
+            : profile.research === "auto" && body.searchEnabled !== false;
+          if (wantsResearch) {
+            try {
+              const { findings, queries, digest } = await research(
+                admin,
+                question,
+                (frame) => send(frame),
+                profile.research === "always",
+                call,
+                makeRawCall(admin),
+              );
+              liveContext = researchContext(findings, queries, digest);
+            } catch (error) {
+              console.error("chat-alibaba research pre-pass failed", error);
+            }
+          }
+        } else {
+          // 2) PRIMARY AGENT: the Manus-style autonomous loop. It writes the todo
+          //    list, searches and reads the live web, delegates whole subtasks to
+          //    the specialist agents in parallel, and returns the evidence pack.
           try {
-            teamBriefs = await runTeam(call, turn, question, liveContext, (frame) => send(frame));
+            const run = await runPrimaryAgent({
+              admin,
+              raw: makeRawCall(admin),
+              question,
+              history: messages,
+              send: (frame) => send(frame),
+              userId,
+              forcedAgent: body.agent?.trim() || undefined,
+            });
+            agentContext = run.context;
           } catch (error) {
-            console.error("chat-alibaba team run failed", error);
+            console.error("chat-alibaba primary agent failed", error);
           }
         }
 
@@ -360,11 +373,12 @@ Deno.serve(async (req) => {
           profileSystem(profile),
           typeof body.customSystem === "string" ? body.customSystem : "",
           liveContext,
-          teamBriefs,
+          agentContext,
           deliveryContract(turn),
         ]
           .filter(Boolean)
           .join("\n\n");
+
 
         const result: (ChatUpstream & { model?: string }) | null = await callAlibaba(admin, models, {
           stream: true,
