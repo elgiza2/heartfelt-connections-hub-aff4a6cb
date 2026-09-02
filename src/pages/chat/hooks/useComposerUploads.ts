@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { parseUploadedFile } from "@/lib/parseUploadedFile";
 import { compressImageToDataUrl } from "@/lib/compressImage";
+import { uploadLargeFile } from "@/lib/telegramStorage";
+
 import type { AttachedFile } from "./useAttachments";
 
 async function attachCompressedImage(
