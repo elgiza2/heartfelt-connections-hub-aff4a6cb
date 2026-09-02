@@ -1,65 +1,79 @@
-/** @doc Bonus tasks on the referral page (review, follow, like & repost). */
+/**
+ * @doc Required steps on the referral page. All of them must be finished —
+ * together with five verified invites — before free Pro can be claimed.
+ * No credits are involved: these are unlock conditions, not paid rewards.
+ */
+import { useState } from "react";
 import { ExternalLink, Check } from "lucide-react";
+import { toast } from "sonner";
 import { translateExactText, useUserLang } from "@/lib/authI18n";
-import { useReferrals, type RewardTask } from "@/pages/billing/ReferralsPage";
-
-/** Tasks we want featured on the invite page, in display order. */
-const FEATURED_KEYS = ["trustpilot_review", "X", "x_like_repost"];
+import { useReferrals } from "@/pages/billing/ReferralsPage";
 
 export default function ReferralTasksList({ className = "" }: { className?: string }) {
   const lang = useUserLang();
   const copy = (t: string) => translateExactText(t, lang);
-  const { tasks, userTasks, claimTask } = useReferrals();
+  const { milestone } = useReferrals();
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const featured = FEATURED_KEYS.map((key) => tasks.find((t) => t.task_key === key)).filter(
-    Boolean,
-  ) as RewardTask[];
+  const tasks = milestone.tasks;
+  if (tasks.length === 0) return null;
 
-  if (featured.length === 0) return null;
+  const run = async (key: string, url: string | null) => {
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    setBusy(key);
+    try {
+      const ok = await milestone.completeTask(key);
+      if (!ok) toast.error(copy("We couldn't save this step yet"));
+    } finally {
+      setBusy(null);
+    }
+  };
 
-  const isDone = (task: RewardTask) =>
-    Boolean(userTasks.find((u) => u.task_id === task.id)?.completed_at);
+  const doneCount = tasks.filter((t) => t.done).length;
 
   return (
     <section className={className}>
-      <h2 className="px-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        {copy("Bonus tasks")}
-      </h2>
+      <div className="flex items-baseline justify-between gap-3 px-1">
+        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          {copy("Required steps")}
+        </h2>
+        <span className="text-[12.5px] font-medium tabular-nums text-muted-foreground" dir="ltr">
+          {doneCount} / {tasks.length}
+        </span>
+      </div>
+      <p className="mt-1.5 px-1 text-[12.5px] leading-relaxed text-muted-foreground">
+        {copy("Finish all steps below to unlock your free Pro subscription.")}
+      </p>
+
       <ul className="mt-3 flex flex-col gap-2">
-        {featured.map((task) => {
-          const done = isDone(task);
-          return (
-            <li key={task.id}>
-              <button
-                type="button"
-                onClick={() => claimTask(task)}
-                disabled={done}
-                className="flex w-full items-center gap-3 rounded-[18px] border border-border bg-foreground/[0.03] px-4 py-3.5 text-left transition hover:bg-foreground/[0.06] active:scale-[0.995] disabled:cursor-default disabled:opacity-60"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-medium text-foreground">
-                    {copy(task.title)}
+        {tasks.map((task) => (
+          <li key={task.key}>
+            <button
+              type="button"
+              onClick={() => run(task.key, task.url)}
+              disabled={task.done || busy === task.key}
+              className="flex w-full items-center gap-3 rounded-[18px] border border-border bg-foreground/[0.03] px-4 py-3.5 text-left transition hover:bg-foreground/[0.06] active:scale-[0.995] disabled:cursor-default disabled:opacity-60"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-medium text-foreground">
+                  {copy(task.title)}
+                </span>
+                {task.description ? (
+                  <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">
+                    {copy(task.description)}
                   </span>
-                  {task.description ? (
-                    <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">
-                      {copy(task.description)}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-[12.5px] font-semibold text-muted-foreground">
-                  +{task.reward_credits}
-                </span>
-                <span className="shrink-0 text-muted-foreground">
-                  {done ? (
-                    <Check className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+                ) : null}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {task.done ? (
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                )}
+              </span>
+            </button>
+          </li>
+        ))}
       </ul>
     </section>
   );

@@ -256,6 +256,10 @@ const REFERRALS_FALLBACK: ReferralsContextValue = {
     referrals: 0,
     target: 5,
     remaining: 5,
+    tasks: [],
+    tasksComplete: false,
+    canClaim: false,
+    completeTask: async () => false,
     claim: async () => ({ ok: false, granted: false }),
     reload: async () => {},
   },
@@ -443,7 +447,13 @@ const ReferralsPage = () => {
   );
 
   const claimPro = async () => {
-    if (milestone.remaining > 0 || milestone.claiming || milestone.isPartner) return;
+    if (!milestone.canClaim || milestone.claiming || milestone.isPartner) {
+      if (milestone.remaining > 0)
+        toast.error(translateExactText("Invite 5 friends first", lang));
+      else if (!milestone.tasksComplete)
+        toast.error(translateExactText("Finish all required steps first", lang));
+      return;
+    }
     try {
       const result = await milestone.claim();
       if (result.granted) toast.success(translateExactText("Pro activated", lang));
@@ -473,7 +483,7 @@ const ReferralsPage = () => {
           <button
             type="button"
             onClick={claimPro}
-            disabled={milestone.loading || milestone.failed || milestone.claiming || milestone.remaining > 0 || milestone.isPartner}
+            disabled={milestone.loading || milestone.failed || milestone.claiming || milestone.isPartner}
             className="inline-flex h-[52px] w-full items-center justify-center rounded-[16px] border border-border bg-background px-5 text-[15px] font-medium text-foreground transition hover:bg-foreground/[0.05] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {milestone.isPartner
