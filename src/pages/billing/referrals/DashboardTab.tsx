@@ -3,6 +3,7 @@ import { useUserLang, translateExactText } from "@/lib/authI18n";
 import heroImage from "@/assets/megsy-referral-hero.jpg";
 import ReferralProgressBar from "@/components/billing/ReferralProgressBar";
 import ReferralPartnerPanel from "@/components/billing/ReferralPartnerPanel";
+import ReferralTasksList from "@/components/billing/ReferralTasksList";
 import { useReferrals } from "@/pages/billing/ReferralsPage";
 
 export default function DashboardTab() {
@@ -42,6 +43,8 @@ export default function DashboardTab() {
         granted={milestone.isPartner}
         expiresAt={milestone.state?.expires_at ?? null}
       />
+
+      <ReferralTasksList className="mt-7" />
     </div>
   );
 }
