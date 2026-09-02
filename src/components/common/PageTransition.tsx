@@ -47,13 +47,7 @@ const PageTransition = ({
     return () => window.clearTimeout(id);
   }, [location.pathname]);
 
-  const isChat = location.pathname.startsWith("/chat") || location.pathname === "/index";
-
-  return (
-    <div key={key} className={isChat ? "ng-page-enter ng-page-enter--chat" : "ng-page-enter"}>
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 };
 
 export default PageTransition;
