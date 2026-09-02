@@ -14,30 +14,13 @@ import { supabase } from "@/integrations/supabase/client";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import MobilePushShell from "@/components/layout/MobilePushShell";
+import MobileSidebarButton from "@/components/shared/MobileSidebarButton";
 import { safeCopyText } from "@/lib/safeClipboard";
 import {
   useReferralMilestone,
   type UseReferralMilestone,
 } from "@/hooks/useReferralMilestone";
 
-/** Same sidebar toggle glyph used across the app's mobile headers. */
-const SidebarToggleIcon = () => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    className="h-[22px] w-[22px]"
-  >
-    <rect x="3.25" y="4.5" width="17.5" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6" />
-    <line x1="9.25" y1="4.5" x2="9.25" y2="19.5" stroke="currentColor" strokeWidth="1.6" />
-    <line x1="5.5" y1="9" x2="7" y2="9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <line x1="5.5" y1="12" x2="7" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <line x1="5.5" y1="15" x2="7" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState<boolean>(
@@ -429,7 +412,7 @@ const ReferralsPage = () => {
   };
 
   const content = (
-    <div className={`mx-auto flex w-full max-w-[620px] flex-col px-5 ${onRewards ? "pb-10" : "pb-6"} pt-3 md:pt-7`}>
+    <div className={`mx-auto flex w-full max-w-[620px] flex-col px-5 ${onRewards ? "pb-10" : "pb-6"} ${onRewards ? "pt-3" : "pt-14"} md:pt-7`}>
       {onRewards || isDesktop ? null : (
         <MobileSidebarButton edge onClick={() => setSidebarOpen(true)} />
       )}
