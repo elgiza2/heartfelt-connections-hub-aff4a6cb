@@ -1115,7 +1115,14 @@ Deno.serve(async (req) => {
     if (body?.kind === "api_app") {
       const { handleApiApp } = await import("./apiAppRunner.ts");
       return await handleApiApp(req, createClient(SUPABASE_URL, SERVICE_KEY), body);
+
+    // Telegram-backed file storage (upload / resolve / list / status)
+    if (body?.kind === "telegram_storage") {
+      const { handleTelegramStorage } = await import("./telegramStorage.ts");
+      return await handleTelegramStorage(req, body);
     }
+
+
 
 
     // video generation
