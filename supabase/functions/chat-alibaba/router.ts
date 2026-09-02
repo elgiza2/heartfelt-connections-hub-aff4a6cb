@@ -143,6 +143,15 @@ const WRITER_HINTS =
 const OPERATOR_HINTS =
   /\b(automate|workflow|pipeline|integrate|schedule|scrape|crawl|monitor|agent|task|do it|execute|run|set ?up|configure|connect)\b|\bplan\b|launch|campaign|strategy|نفذ|تنفيذ|شغل|اعمل|اعملي|جهز|ابدأ|ابدا|خطط|خطة|حملة|استراتيجية|أتمت|أتمتة|اربط|تكامل|جدول|راقب|اسحب|مهمة|مهام|وكيل/i;
 
+const DESIGNER_HINTS =
+  /\b(design|ui|ux|wireframe|mockup|layout|typography|font|palette|colou?r|theme|branding|logo|landing page|figma|component library|design system|spacing|icon)\b|تصميم|واجهة|واجهات|هوية|شعار|لوجو|خطوط|ألوان|الوان|قالب|تنسيق|ثيم|ستايل|صفحة هبوط/i;
+const MARKETER_HINTS =
+  /\b(marketing|growth|seo|aso|ads?|campaign|funnel|conversion|landing copy|audience|influencer|viral|referral|pricing|launch|traffic|leads?|newsletter|tiktok|instagram|youtube)\b|تسويق|ماركتينج|نمو|حملة|حملات|إعلان|اعلان|إعلانات|جمهور|مبيعات|زوار|عملاء|تحويل|أسعار|اسعار|باقات|انتشار|احالة|إحالة/i;
+const DATA_HINTS =
+  /\b(sql|query|dataset|data ?set|dashboard|metric|kpi|etl|warehouse|bigquery|postgres|csv|excel|spreadsheet|pivot|report table|analytics|cohort|retention|funnel query)\b|بيانات|قاعدة بيانات|استعلام|جدول|جداول|شيت|إكسل|اكسل|لوحة تحكم|مؤشرات|تقارير|تحليلات/i;
+const REVIEWER_HINTS =
+  /\b(review|audit|verify|check|validate|proofread|qa|test coverage|security review|code review|double ?check)\b|راجع|مراجعة|تحقق|تأكد|دقق|تدقيق|فحص|جودة|تصحيح أخطاء|أمان/i;
+
 function score(text: string, pattern: RegExp): number {
   return (text.match(new RegExp(pattern.source, "gi")) ?? []).length;
 }
@@ -159,6 +168,10 @@ export function routeProfile(question: string, requestedAgent?: string): AgentPr
     ["analyst", score(text, ANALYST_HINTS) * 1.6],
     ["writer", score(text, WRITER_HINTS) * 1.6],
     ["operator", score(text, OPERATOR_HINTS) * 1.4],
+    ["designer", score(text, DESIGNER_HINTS) * 1.6],
+    ["marketer", score(text, MARKETER_HINTS) * 1.6],
+    ["data", score(text, DATA_HINTS) * 1.6],
+    ["reviewer", score(text, REVIEWER_HINTS) * 1.3],
   ];
   scores.sort((a, b) => b[1] - a[1]);
   const [id, best] = scores[0];
