@@ -590,7 +590,7 @@ export default function MailPage() {
       >
         <div className="min-h-[100dvh] bg-background text-foreground">
           <div
-            className="flex items-center gap-2 px-4 pb-1"
+            className="flex items-center gap-2 px-3 pb-1"
             style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}
           >
             <button

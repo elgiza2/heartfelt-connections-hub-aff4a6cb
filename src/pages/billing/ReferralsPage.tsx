@@ -14,30 +14,13 @@ import { supabase } from "@/integrations/supabase/client";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import MobilePushShell from "@/components/layout/MobilePushShell";
+import MobileSidebarButton from "@/components/shared/MobileSidebarButton";
 import { safeCopyText } from "@/lib/safeClipboard";
 import {
   useReferralMilestone,
   type UseReferralMilestone,
 } from "@/hooks/useReferralMilestone";
 
-/** Same sidebar toggle glyph used across the app's mobile headers. */
-const SidebarToggleIcon = () => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    className="h-[22px] w-[22px]"
-  >
-    <rect x="3.25" y="4.5" width="17.5" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6" />
-    <line x1="9.25" y1="4.5" x2="9.25" y2="19.5" stroke="currentColor" strokeWidth="1.6" />
-    <line x1="5.5" y1="9" x2="7" y2="9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <line x1="5.5" y1="12" x2="7" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <line x1="5.5" y1="15" x2="7" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState<boolean>(
@@ -429,17 +412,11 @@ const ReferralsPage = () => {
   };
 
   const content = (
-    <div className={`mx-auto flex min-h-full w-full max-w-[620px] flex-col px-5 ${onRewards ? "pb-10" : "pb-[150px]"} pt-3 md:pt-7`}>
+    <div className={`mx-auto flex w-full max-w-[620px] flex-col px-5 ${onRewards ? "pb-10" : "pb-6"} ${onRewards ? "pt-3" : "pt-14"} md:pt-7`}>
       {onRewards || isDesktop ? null : (
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open menu"
-          className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent text-foreground transition active:scale-95"
-        >
-          <SidebarToggleIcon />
-        </button>
+        <MobileSidebarButton edge onClick={() => setSidebarOpen(true)} />
       )}
+
       <div className="flex flex-1 flex-col">
         <Outlet />
       </div>
@@ -463,15 +440,21 @@ const ReferralsPage = () => {
     }
   };
 
-  /** Pinned actions — share the invite or claim Pro after five verified joins. */
+  /**
+   * Pinned actions — share the invite or claim Pro after five verified joins.
+   *
+   * This is `sticky` inside the scroll container, not `fixed` to the viewport:
+   * a fixed bar is centred on the whole window, so on desktop it drifted out
+   * of the content column and slid under the sidebar, and its full-width
+   * backdrop strip did not line up with the bordered button box.
+   */
   const actionBar = (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
+      className="sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 14px)" }}
     >
-      <div className="h-5 bg-background" />
-      <div className="pointer-events-auto mx-auto w-full max-w-[620px] border-t border-border bg-background px-5 pt-3">
-        <div className="flex flex-col gap-2">
+      <div className="mx-auto w-full max-w-[620px] px-5 pt-3">
+        <div className="flex flex-col gap-2.5">
           <button
             type="button"
             onClick={shareLink}
