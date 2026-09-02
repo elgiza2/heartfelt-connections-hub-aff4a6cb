@@ -79,6 +79,46 @@ const PROFILES: Record<string, AgentProfile> = {
     persona:
       "You are the Operator agent. Turn open-ended requests into executed work: decompose the goal, sequence the steps, use the tools and integrations available, and report what ran with its result. When a step cannot run in this turn, hand the user the exact next executable step instead of a vague plan. Never fabricate an outcome.",
   },
+  designer: {
+    id: "designer",
+    label: "Designer",
+    labelAr: "وكيل التصميم",
+    models: ["qwen3.8-max", "qwen3.7-max", "qwen-max", "qwen-plus"],
+    temperature: 0.55,
+    research: "auto",
+    persona:
+      "You are the Designer agent. Own product and visual design: UX flows, information architecture, layout, typography, colour systems, design tokens and accessible component specs. Deliver concrete specs (tokens, spacing scale, states) and, when the work is code, complete Tailwind/React markup using semantic tokens — never hardcoded colours. Commit to one distinctive direction instead of listing options.",
+  },
+  marketer: {
+    id: "marketer",
+    label: "Growth",
+    labelAr: "وكيل النمو والتسويق",
+    models: ["qwen3.8-max", "qwen3.7-max", "qwen-max", "qwen-plus"],
+    temperature: 0.6,
+    research: "auto",
+    persona:
+      "You are the Growth agent. Own acquisition, positioning, funnels, SEO/ASO, content calendars, paid and organic campaigns, pricing and referral loops. Give channel-by-channel plays with the exact asset text, the metric each play moves, and a realistic expected range. Prefer zero-budget levers first when the budget is small.",
+  },
+  data: {
+    id: "data",
+    label: "Data",
+    labelAr: "وكيل البيانات",
+    models: ["qwen3.8-max", "deepseek-v4-pro", "qwen-max", "qwen-plus"],
+    temperature: 0.2,
+    research: "auto",
+    persona:
+      "You are the Data agent. Own datasets, SQL, schemas, ETL, spreadsheets, dashboards and metric definitions. Write runnable, parameterised SQL (never string-built), define every metric precisely, state the grain of each table, and call out data-quality risks. Show the query first, then the reading of the result.",
+  },
+  reviewer: {
+    id: "reviewer",
+    label: "Reviewer",
+    labelAr: "وكيل المراجعة",
+    models: ["qwen3.8-max", "qwen-max", "qwen3.8-flash"],
+    temperature: 0.15,
+    research: "auto",
+    persona:
+      "You are the Reviewer agent. Verify work before it reaches the user: check facts against the supplied evidence, check code for correctness/security/edge cases, check numbers by recomputing them, and check that every part of the request was actually delivered. Output a short verdict, then only the concrete defects with their fixes. Never rewrite what is already correct.",
+  },
   general: {
     id: "general",
     label: "Generalist",
@@ -91,6 +131,7 @@ const PROFILES: Record<string, AgentProfile> = {
   },
 };
 
+
 const CODE_HINTS =
   /\b(code|coding|program|programming|debug|bug|error|stack ?trace|refactor|api|sdk|function|component|react|vite|typescript|javascript|python|rust|golang|java|kotlin|swift|sql|schema|migration|docker|kubernetes|terraform|regex|npm|bun|git|github|repo|repository|deploy|build|test|unit test|compile|endpoint|backend|frontend|css|tailwind|supabase|edge function)\b|```|\bكود\b|برمج|برمجة|مبرمج|دالة|مكتبة|مستودع|خطأ|ديبق|تصحيح|واجهة برمجية|قاعدة بيانات|سكربت|تطبيق|موقع|صفحة|نشر|بناء|اختبار/i;
 const RESEARCH_HINTS =
@@ -101,6 +142,15 @@ const WRITER_HINTS =
   /\b(write|draft|rewrite|edit|essay|article|blog|post|caption|script|email|letter|story|poem|summar[iy]|translate|slogan|ad copy)\b|اكتب|اكتبلي|صيغ|صياغة|مقال|مقالة|منشور|رسالة|إيميل|قصة|شعر|سكربت|ترجم|تلخيص|لخص|إعلان/i;
 const OPERATOR_HINTS =
   /\b(automate|workflow|pipeline|integrate|schedule|scrape|crawl|monitor|agent|task|do it|execute|run|set ?up|configure|connect)\b|\bplan\b|launch|campaign|strategy|نفذ|تنفيذ|شغل|اعمل|اعملي|جهز|ابدأ|ابدا|خطط|خطة|حملة|استراتيجية|أتمت|أتمتة|اربط|تكامل|جدول|راقب|اسحب|مهمة|مهام|وكيل/i;
+
+const DESIGNER_HINTS =
+  /\b(design|ui|ux|wireframe|mockup|layout|typography|font|palette|colou?r|theme|branding|logo|landing page|figma|component library|design system|spacing|icon)\b|تصميم|واجهة|واجهات|هوية|شعار|لوجو|خطوط|ألوان|الوان|قالب|تنسيق|ثيم|ستايل|صفحة هبوط/i;
+const MARKETER_HINTS =
+  /\b(marketing|growth|seo|aso|ads?|campaign|funnel|conversion|landing copy|audience|influencer|viral|referral|pricing|launch|traffic|leads?|newsletter|tiktok|instagram|youtube)\b|تسويق|ماركتينج|نمو|حملة|حملات|إعلان|اعلان|إعلانات|جمهور|مبيعات|زوار|عملاء|تحويل|أسعار|اسعار|باقات|انتشار|احالة|إحالة/i;
+const DATA_HINTS =
+  /\b(sql|query|dataset|data ?set|dashboard|metric|kpi|etl|warehouse|bigquery|postgres|csv|excel|spreadsheet|pivot|report table|analytics|cohort|retention|funnel query)\b|بيانات|قاعدة بيانات|استعلام|جدول|جداول|شيت|إكسل|اكسل|لوحة تحكم|مؤشرات|تقارير|تحليلات/i;
+const REVIEWER_HINTS =
+  /\b(review|audit|verify|check|validate|proofread|qa|test coverage|security review|code review|double ?check)\b|راجع|مراجعة|تحقق|تأكد|دقق|تدقيق|فحص|جودة|تصحيح أخطاء|أمان/i;
 
 function score(text: string, pattern: RegExp): number {
   return (text.match(new RegExp(pattern.source, "gi")) ?? []).length;
@@ -118,6 +168,10 @@ export function routeProfile(question: string, requestedAgent?: string): AgentPr
     ["analyst", score(text, ANALYST_HINTS) * 1.6],
     ["writer", score(text, WRITER_HINTS) * 1.6],
     ["operator", score(text, OPERATOR_HINTS) * 1.4],
+    ["designer", score(text, DESIGNER_HINTS) * 1.6],
+    ["marketer", score(text, MARKETER_HINTS) * 1.6],
+    ["data", score(text, DATA_HINTS) * 1.6],
+    ["reviewer", score(text, REVIEWER_HINTS) * 1.3],
   ];
   scores.sort((a, b) => b[1] - a[1]);
   const [id, best] = scores[0];

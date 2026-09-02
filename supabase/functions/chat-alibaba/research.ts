@@ -10,7 +10,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 export type Finding = { title: string; url: string; snippet: string; excerpt: string };
 
-async function braveKey(admin: SupabaseClient): Promise<string | null> {
+export async function braveKey(admin: SupabaseClient): Promise<string | null> {
   const { data } = await admin
     .from("brave_keys")
     .select("api_key")
@@ -21,7 +21,7 @@ async function braveKey(admin: SupabaseClient): Promise<string | null> {
     Deno.env.get("BRAVE_API_KEY")?.trim() || null;
 }
 
-async function braveSearch(key: string, query: string, count = 10) {
+export async function braveSearch(key: string, query: string, count = 10) {
   try {
     const res = await fetch(
       `https://api.search.brave.com/res/v1/web/search?count=${count}&q=${encodeURIComponent(query)}`,
@@ -37,7 +37,7 @@ async function braveSearch(key: string, query: string, count = 10) {
   }
 }
 
-async function readPage(url: string, maxChars = 4_000): Promise<string> {
+export async function readPage(url: string, maxChars = 4_000): Promise<string> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12_000);

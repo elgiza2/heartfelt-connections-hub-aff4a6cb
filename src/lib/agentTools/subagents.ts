@@ -91,6 +91,16 @@ export const SUBAGENTS: SubAgentSpec[] = [
     maxSteps: 10,
   },
   {
+    slug: "designer",
+    name: "Product Designer",
+    purpose: "UX flows, UI layout, design systems, tokens, typography, colour and accessible component specs.",
+    toolSeeds: ["image generate", "design tokens", "screenshot", "figma", "accessibility audit"],
+    system:
+      "You are a product designer. Commit to one distinctive direction instead of listing options. Deliver concrete specs: token values, spacing scale, states, and complete Tailwind/React markup using semantic tokens only — never hardcoded colours. Check contrast and mobile layout explicitly.",
+    maxSteps: 10,
+  },
+  {
+
     slug: "reviewer",
     name: "Critic & QA",
     purpose: "Reviewing another agent's output for gaps, errors, stale facts and missing sources.",
