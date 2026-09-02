@@ -413,15 +413,14 @@ const AppSidebar = ({
   }> = [
   ];
 
-  // Mail only appears once the user pins it from the Mail page.
-  if (sidebarPins.includes("mail")) {
-    moreNav.push({
-      label: "Mail",
-      Icon: (props) => <MailIcon size={props.size} className={props.className} strokeWidth={props.strokeWidth} />,
-      path: "/settings/mail",
-      match: (p: string) => p.startsWith("/settings/mail"),
-    });
-  }
+  // Megsy Email is always available in the sidebar.
+  moreNav.push({
+    label: "Megsy Email",
+    Icon: (props) => <MailIcon size={props.size} className={props.className} strokeWidth={props.strokeWidth} />,
+    path: "/settings/mail",
+    match: (p: string) => p.startsWith("/settings/mail"),
+  });
+
 
   // Earn is visible for everyone (site + Telegram). Tasks stays Telegram-only.
   moreNav.push({
