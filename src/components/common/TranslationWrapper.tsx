@@ -6,7 +6,11 @@ import {
   isSupportedLang,
   useUserLang,
 } from "@/lib/authI18n";
-import { startEgyptianDom, stopEgyptianDom } from "@/lib/i18n/egyptianDom";
+import {
+  retranslateEgyptianDom,
+  startEgyptianDom,
+  stopEgyptianDom,
+} from "@/lib/i18n/egyptianDom";
 
 interface TranslationWrapperProps {
   children: ReactNode;
