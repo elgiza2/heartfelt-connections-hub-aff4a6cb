@@ -67,6 +67,37 @@ async function tgUpload(method: string, form: FormData): Promise<any> {
   return parsed.result;
 }
 
+async function sendBytesToTelegram(
+  bytes: Uint8Array,
+  filename: string,
+  mime: string,
+  hint?: string,
+): Promise<{ message: any; media: any; kind: "photo" | "video" | "document"; chatId: string }> {
+  const kind = pickKind(mime, hint);
+  const chatId = await storageChatId();
+  const method = kind === "photo" ? "sendPhoto" : kind === "video" ? "sendVideo" : "sendDocument";
+  const field = kind === "photo" ? "photo" : kind === "video" ? "video" : "document";
+  const form = new FormData();
+  form.append("chat_id", chatId);
+  form.append("disable_notification", "true");
+  form.append(field, new Blob([bytes], { type: mime }), filename);
+  let message: any;
+  try {
+    message = await tgUpload(method, form);
+  } catch (e) {
+    if (kind === "document") throw e;
+    const fallback = new FormData();
+    fallback.append("chat_id", chatId);
+    fallback.append("disable_notification", "true");
+    fallback.append("document", new Blob([bytes], { type: mime }), filename);
+    message = await tgUpload("sendDocument", fallback);
+  }
+  const photo = Array.isArray(message?.photo) ? message.photo[message.photo.length - 1] : null;
+  const media = message?.document ?? message?.video ?? photo ?? null;
+  if (!media?.file_id) throw new Error("telegram returned no file id");
+  return { message, media, kind, chatId };
+}
+
 /** The storage chat: an explicit secret, else the most recent chat that messaged the bot. */
 async function storageChatId(): Promise<string> {
   const configured = Deno.env.get("TELEGRAM_STORAGE_CHAT_ID");
@@ -113,6 +144,89 @@ export async function handleTelegramStorage(req: Request, body: any): Promise<Re
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
     const action = String(body?.action ?? "upload");
+
+    if (action === "migrate_storage_bucket") {
+      const { data: role } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!role) return json({ ok: false, error: "forbidden" }, 403);
+      const bucket = String(body?.bucket ?? "");
+      if (!bucket || !/^[a-z0-9-]{3,63}$/.test(bucket)) {
+        return json({ ok: false, error: "invalid_bucket" }, 400);
+      }
+      const removeCopied = body?.remove_copied === true;
+      const limit = Math.min(Math.max(Number(body?.limit ?? 50) || 50, 1), 100);
+      const files: Array<{ name: string; metadata?: Record<string, unknown> | null }> = [];
+      const walk = async (prefix = "") => {
+        let offset = 0;
+        while (files.length < limit) {
+          const { data, error } = await admin.storage.from(bucket).list(prefix, {
+            limit: Math.min(1000, limit - files.length), offset, sortBy: { column: "name", order: "asc" },
+          });
+          if (error) throw error;
+          if (!data?.length) break;
+          for (const entry of data) {
+            const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+            if (entry.metadata) files.push({ name: path, metadata: entry.metadata as Record<string, unknown> });
+            else await walk(path);
+            if (files.length >= limit) break;
+          }
+          if (data.length < Math.min(1000, limit - files.length + data.length)) break;
+          offset += data.length;
+        }
+      };
+      await walk();
+      let migrated = 0;
+      let removed = 0;
+      const errors: string[] = [];
+      for (const file of files) {
+        const fallbackPath = `${bucket}/${file.name}`;
+        const { data: existing } = await admin
+          .from("telegram_media")
+          .select("id,file_id")
+          .eq("fallback_path", fallbackPath)
+          .maybeSingle();
+        if (!existing) {
+          try {
+            const { data: blob, error } = await admin.storage.from(bucket).download(file.name);
+            if (error || !blob) throw error ?? new Error("download_failed");
+            if (blob.size > MAX_BYTES) throw new Error("file_too_large");
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            const mime = blob.type || String(file.metadata?.mimetype ?? "application/octet-stream");
+            const filename = file.name.split("/").pop() || "file";
+            const sent = await sendBytesToTelegram(bytes, filename, mime);
+            const { url } = await freshUrl(sent.media.file_id);
+            const { error: insertError } = await admin.from("telegram_media").insert({
+              user_id: userId,
+              file_id: sent.media.file_id,
+              file_unique_id: sent.media.file_unique_id ?? null,
+              kind: sent.kind,
+              mime_type: sent.media.mime_type ?? mime,
+              size_bytes: sent.media.file_size ?? bytes.byteLength,
+              cached_url: url,
+              cached_until: new Date(Date.now() + CACHE_MS).toISOString(),
+              original_filename: filename,
+              fallback_path: fallbackPath,
+              metadata: { migrated: true, bucket, path: file.name, message_id: sent.message?.message_id, chat_id: sent.chatId },
+            });
+            if (insertError) throw insertError;
+            migrated++;
+          } catch (e) {
+            errors.push(`${file.name}: ${e instanceof Error ? e.message : "migration_failed"}`);
+            continue;
+          }
+        }
+        if (removeCopied) {
+          const { error } = await admin.storage.from(bucket).remove([file.name]);
+          if (error) errors.push(`${file.name}: remove: ${error.message}`);
+          else removed++;
+        }
+      }
+      return json({ ok: errors.length === 0, bucket, scanned: files.length, migrated, removed, errors });
+    }
 
     if (action === "status") {
       const me = await tg("getMe", {});
@@ -210,34 +324,9 @@ export async function handleTelegramStorage(req: Request, body: any): Promise<Re
       return json({ ok: false, error: "file_too_large", max_bytes: MAX_BYTES }, 413);
     }
 
-    const kind = pickKind(mime, body?.kind);
-    const chatId = await storageChatId();
-    const method = kind === "photo" ? "sendPhoto" : kind === "video" ? "sendVideo" : "sendDocument";
-    const field = kind === "photo" ? "photo" : kind === "video" ? "video" : "document";
-
-    const form = new FormData();
-    form.append("chat_id", chatId);
-    form.append("disable_notification", "true");
-    form.append(field, new Blob([bytes], { type: mime }), filename);
-
-    let message: any;
-    try {
-      message = await tgUpload(method, form);
-    } catch (e) {
-      // Telegram rejects some images/videos for its typed endpoints — a plain
-      // document upload always works, so never fail the whole request here.
-      if (kind === "document") throw e;
-      const docForm = new FormData();
-      docForm.append("chat_id", chatId);
-      docForm.append("disable_notification", "true");
-      docForm.append("document", new Blob([bytes], { type: mime }), filename);
-      message = await tgUpload("sendDocument", docForm);
-    }
-
-    const photo = Array.isArray(message?.photo) ? message.photo[message.photo.length - 1] : null;
-    const media = message?.document ?? message?.video ?? photo ?? null;
-    const fileId = media?.file_id;
-    if (!fileId) return json({ ok: false, error: "telegram returned no file id" }, 502);
+    const sent = await sendBytesToTelegram(bytes, filename, mime, body?.kind);
+    const { message, media, kind, chatId } = sent;
+    const fileId = media.file_id;
 
     const { url } = await freshUrl(fileId);
 
