@@ -1,18 +1,16 @@
 import { useLocation, type Location } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { isCacheablePath, scheduleSnapshotSave } from "@/lib/pageSnapshot";
 
 /**
- * PageTransition — wraps route content and replays a soft fade+lift animation
- * whenever the URL pathname changes. CSS-driven (see page-transitions.css) so
- * no framer-motion dependency is added to the initial critical path.
+ * PageTransition — wraps route content and captures a page snapshot for the
+ * "instant open" cache.
  *
- * `location` may be passed by the caller (App renders routes with a deferred
- * location) so the animation fires when the new page is actually painted,
- * not when the URL changes.
- *
- * Chat is excluded because it owns its own message-level animation choreography
- * and a container-level cross-fade would fight it.
+ * It deliberately does NOT re-key or animate the route container. Re-keying
+ * unmounted and rebuilt the whole page on every section change, and the
+ * container-level fade replayed on top of it — together they read as a full
+ * browser refresh on every navigation. Navigation is now a plain swap; pages
+ * keep their own local animations.
  */
 const PageTransition = ({
   children,
@@ -23,22 +21,6 @@ const PageTransition = ({
 }) => {
   const routerLocation = useLocation();
   const location = locationProp ?? routerLocation;
-  const transitionKey = useMemo(() => {
-    const segments = location.pathname.split("/").filter(Boolean);
-    if (segments[0] === "chat") return "chat";
-    if (segments[0] === "settings") return "settings";
-    return segments[0] || "home";
-  }, [location.pathname]);
-
-  const [key, setKey] = useState(transitionKey);
-  const lastKeyRef = useRef(transitionKey);
-
-  useEffect(() => {
-    if (lastKeyRef.current !== transitionKey) {
-      lastKeyRef.current = transitionKey;
-      setKey(transitionKey);
-    }
-  }, [transitionKey]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -65,13 +47,7 @@ const PageTransition = ({
     return () => window.clearTimeout(id);
   }, [location.pathname]);
 
-  const isChat = location.pathname.startsWith("/chat") || location.pathname === "/index";
-
-  return (
-    <div key={key} className={isChat ? "ng-page-enter ng-page-enter--chat" : "ng-page-enter"}>
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 };
 
 export default PageTransition;

@@ -9,3 +9,8 @@
 - [ ] Connections screen for user-provided API keys (Brave, others)
 - [ ] Parallel specialist sub-agents for long research reports
 - [x] Rebuild referral page around the approved artwork with a clean, icon-free interface
+
+## 2026-09-02
+- [ ] إعادة ربط موصّل Telegram في الوركسبيس الجديد
+- [ ] إزالة الوميض/الريفرش عند التنقل بين الصفحات وعند أول رسالة
+- [ ] تحسين تغطية الترجمة المصرية في معظم الصفحات

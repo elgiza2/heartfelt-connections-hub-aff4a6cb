@@ -6,7 +6,11 @@ import {
   isSupportedLang,
   useUserLang,
 } from "@/lib/authI18n";
-import { startEgyptianDom, stopEgyptianDom } from "@/lib/i18n/egyptianDom";
+import {
+  retranslateEgyptianDom,
+  startEgyptianDom,
+  stopEgyptianDom,
+} from "@/lib/i18n/egyptianDom";
 
 interface TranslationWrapperProps {
   children: ReactNode;
@@ -34,12 +38,34 @@ const TranslationWrapper = ({ children }: TranslationWrapperProps) => {
   }, []);
 
   useEffect(() => {
-    if (lang === "ar-eg") {
-      startEgyptianDom();
-      return () => stopEgyptianDom();
+    if (lang !== "ar-eg") {
+      stopEgyptianDom();
+      return undefined;
     }
-    stopEgyptianDom();
-    return undefined;
+
+    startEgyptianDom();
+
+    // Route changes swap whole page subtrees and those pages then fill in
+    // asynchronously (profile, credits, lists), so one mutation batch is not
+    // enough. Re-pass right after the navigation and once more when the data
+    // has had a chance to land.
+    const timers: number[] = [];
+    const onNavigate = () => {
+      timers.push(
+        window.setTimeout(retranslateEgyptianDom, 0),
+        window.setTimeout(retranslateEgyptianDom, 350),
+        window.setTimeout(retranslateEgyptianDom, 1200),
+      );
+    };
+    window.addEventListener("megsy:navigation", onNavigate);
+    window.addEventListener("popstate", onNavigate);
+
+    return () => {
+      window.removeEventListener("megsy:navigation", onNavigate);
+      window.removeEventListener("popstate", onNavigate);
+      timers.forEach((id) => window.clearTimeout(id));
+      stopEgyptianDom();
+    };
   }, [lang]);
 
   return <>{children}</>;
