@@ -1,29 +1,17 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 /**
- * Shared hub shell: keeps one page mounted per section (auth / billing /
- * integrations) and cross-fades the inner view whenever the child route
- * changes, so the section feels like a single page with swapping panels.
+ * Shared hub shell for the auth / billing / integrations sections.
+ *
+ * It used to cross-fade child routes with `AnimatePresence mode="wait"`, which
+ * fully unmounted the old panel and left an empty frame for ~240ms before the
+ * next one mounted — visually identical to a page refresh. The panel now swaps
+ * instantly; individual pages keep their own entrance animations.
  */
-export const AnimatedShell = ({ className }: { className?: string }) => {
-  const location = useLocation();
-
-  return (
-    <div className={className ?? "min-h-dvh bg-background text-foreground"}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <Outlet />
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-};
+export const AnimatedShell = ({ className }: { className?: string }) => (
+  <div className={className ?? "min-h-dvh bg-background text-foreground"}>
+    <Outlet />
+  </div>
+);
 
 export default AnimatedShell;
