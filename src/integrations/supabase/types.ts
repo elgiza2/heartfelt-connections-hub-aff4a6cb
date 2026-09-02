@@ -15456,6 +15456,7 @@ export type Database = {
       cleanup_high_volume_tables: { Args: never; Returns: Json }
       cleanup_old_research_reports: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      complete_referral_task: { Args: { p_task_key: string }; Returns: Json }
       complete_task_for_telegram: {
         Args: { _task_id: string; _telegram_id: number }
         Returns: Json
@@ -16533,6 +16534,7 @@ export type Database = {
       }
       redeem_referral_reward: { Args: { p_reward_id: string }; Returns: Json }
       redeem_reward: { Args: { p_reward_slug: string }; Returns: Json }
+      referral_required_task_keys: { Args: never; Returns: string[] }
       release_long_run_lease: {
         Args: { p_lease_id: string; p_run_id: string }
         Returns: undefined
