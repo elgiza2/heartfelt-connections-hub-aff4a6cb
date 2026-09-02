@@ -9,15 +9,15 @@ const json = (body: unknown, status = 200) =>
 
 const targets: Record<string, string[]> = {
   "docs-uploads": [
-    "27a33ae2-29bf-41d1-a68a-7da216bc4bd6/1772606906685-cvd7av.pdf",
-    "27a33ae2-29bf-41d1-a68a-7da216bc4bd6/1772607108985-bc5ec3.pdf",
-    "27a33ae2-29bf-41d1-a68a-7da216bc4bd6/1772607781763-xbjmg2.pdf",
-    "27a33ae2-29bf-41d1-a68a-7da216bc4bd6/1772608421214-46wr8s.pdf",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1779247566419-h5q71g.webp",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1779250070589-pogtcx.webp",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1779284432479-hz5l40.webp",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1779523774985-ovparb.webp",
   ],
   "slide-presentations": [
-    "user-1/1771686311730-7twx2e.pptx",
-    "user-1/1771687238956-8ts9h7.pptx",
-    "user-1/1771687515176-x0ffjs.pptx",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1776796401852-_____ ______ _____ ___ __ _____.pdf",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1776800973896-__ ______ ____ _____ __ ____ ________ _______.pdf",
+    "3863bfb6-7d0d-46da-a2d7-7ec920e4aa85/1776801916730-____ ___-resume.pdf",
   ],
 };
 
