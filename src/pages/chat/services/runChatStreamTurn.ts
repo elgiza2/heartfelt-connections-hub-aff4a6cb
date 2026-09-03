@@ -1456,29 +1456,37 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
       // A failed text-model stream is not the end of the turn: the cloud
       // browser agents can answer it on their own (they bring their own model),
       // so try them before showing any error to the user.
-      const isGuest = err === GUEST_QUOTA_ERROR;
-      if (!isGuest && !assistantContent.trim()) {
+      // Guests are included on purpose: the cloud agent runs on its own
+      // capacity, so a signed-out visitor still gets a real answer.
+      if (!assistantContent.trim()) {
         void (async () => {
           try {
             const { runCloudAgentAnswer } = await import("@/lib/cloudAgentAnswer");
             const cid = await conversationPromise;
+            const patch = (fields: Record<string, unknown>) =>
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.clientId === `assistant-${localTurnId}` ? { ...m, ...fields } : m,
+                ),
+              );
+            const trace: string[] = [];
             const answer = await runCloudAgentAnswer(userInput || "", {
               conversationId: cid,
               budgetMs: 300_000,
               signal: controller.signal,
+              // Surface the live computer session so the user sees the agent work.
+              onTask: (taskId) => patch({ computerTaskId: taskId }),
               onStep: (title) => {
                 setToolActivity({ name: "browser", appSlug: "browser", status: "running", target: title });
+                // Mirror the agent's real steps into the thinking trace.
+                trace.push(title);
+                patch({ reasoning: trace.join("\n") });
               },
             });
             if (answer?.text) {
               assistantContent = answer.text;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.clientId === `assistant-${localTurnId}`
-                    ? { ...m, content: answer.text }
-                    : m,
-                ),
-              );
+              // Drop the live task card so the finished answer is the bubble.
+              patch({ content: answer.text, computerTaskId: undefined });
               setIsThinking(false);
               setIsLoading(false);
               resetToolUi();
