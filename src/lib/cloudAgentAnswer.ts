@@ -15,6 +15,8 @@ import { createComputerTask, pollComputerTask } from "@/lib/computer/client";
 export interface CloudAgentAnswer {
   text: string;
   steps: string[];
+  /** Task the answer came from, so the UI can show the computer surface. */
+  taskId?: string | null;
 }
 
 export interface CloudAgentOptions {
@@ -24,6 +26,8 @@ export interface CloudAgentOptions {
   budgetMs?: number;
   /** Live progress for the UI (one line per agent step). */
   onStep?: (title: string, url?: string | null) => void;
+  /** Fired as soon as the cloud task exists, so the UI can surface it live. */
+  onTask?: (taskId: string) => void;
   signal?: AbortSignal;
 }
 
@@ -56,13 +60,14 @@ export async function runCloudAgentAnswer(
     conversation_id: options.conversationId ?? null,
   }).catch(() => null);
   if (!created?.task_id || created.status === "failed") return null;
+  options.onTask?.(created.task_id);
 
   const deadline = Date.now() + Math.min(Math.max(options.budgetMs ?? 240_000, 20_000), 6 * 60 * 60_000);
   let seenSteps = 0;
   const steps: string[] = [];
 
   while (Date.now() < deadline) {
-    if (options.signal?.aborted) return steps.length ? { text: "", steps } : null;
+    if (options.signal?.aborted) return steps.length ? { text: "", steps, taskId: created.task_id } : null;
     await sleep(2_500);
     const snapshot = await pollComputerTask(created.task_id).catch(() => null);
     if (!snapshot?.task) continue;
@@ -74,7 +79,7 @@ export async function runCloudAgentAnswer(
     seenSteps = (snapshot.events ?? []).length;
 
     if (snapshot.task.status === "done") {
-      return { text: (snapshot.task.result_text ?? "").trim(), steps };
+      return { text: (snapshot.task.result_text ?? "").trim(), steps, taskId: created.task_id };
     }
     if (snapshot.task.status === "failed") return null;
   }

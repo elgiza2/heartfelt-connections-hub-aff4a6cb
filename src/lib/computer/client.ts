@@ -39,6 +39,12 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
     const { data: refreshed } = await supabase.auth.refreshSession();
     token = refreshed.session?.access_token;
   }
+  if (!token) {
+    // Visitors who have not signed up still get the agent: a throwaway
+    // anonymous identity carries the same RLS scoping without a signup wall.
+    const { data: anon } = await supabase.auth.signInAnonymously();
+    token = anon.session?.access_token;
+  }
   if (!token) throw new Error(SIGN_IN_MESSAGE);
 
   const resp = await fetch(COMPUTER_AGENT_URL, {

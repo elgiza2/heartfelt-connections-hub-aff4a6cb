@@ -49,10 +49,24 @@
 }
 
 /* ── Assistant text ──────────────────────────────────────── */
+/* Assistant body copy sits at the international chat standard (15px / 1.7)
+   so long answers stay compact and scannable instead of oversized. */
 .prose-chat {
   color: hsl(var(--foreground)) !important;
-  font-size: 1rem;
-  line-height: 1.85;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.prose-chat h1 {
+  font-size: 1.15rem;
+}
+
+.prose-chat h2 {
+  font-size: 1.05rem;
+}
+
+.prose-chat h3 {
+  font-size: 0.975rem;
 }
 
 .prose-chat strong {

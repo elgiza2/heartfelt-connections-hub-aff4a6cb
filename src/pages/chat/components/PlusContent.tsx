@@ -978,7 +978,7 @@ const PlusIntegrationsBody = (p: PlusContentProps) => {
             <button
               key={cat}
               onClick={() => p.setIntegrationsCategory(cat)}
-              className={`shrink-0 px-4 h-9 rounded-full text-[12.5px] font-semibold border transition-colors whitespace-nowrap ${
+              className={`shrink-0 px-3 h-8 rounded-xl text-[12px] font-semibold border transition-colors whitespace-nowrap ${
                 active
                   ? "border-foreground/25 bg-foreground/[0.14] text-foreground"
                   : "border-foreground/12 bg-foreground/[0.05] text-foreground/80 active:bg-foreground/[0.08]"
