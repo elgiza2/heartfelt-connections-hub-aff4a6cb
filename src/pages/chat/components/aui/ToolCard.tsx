@@ -81,7 +81,7 @@ export function ToolCard({ part, userId }: { part: ToolPart; userId?: string | n
         aria-expanded={open}
       >
         <span
-          className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-current/10 ring-1 ring-current/15 ${meta.tint}`}
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-foreground/[0.06] ring-1 ring-inset ring-foreground/10 ${meta.tint}`}
         >
           <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
         </span>
