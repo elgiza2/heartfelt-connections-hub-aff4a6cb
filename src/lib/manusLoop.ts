@@ -50,18 +50,31 @@ export interface RunManusLoopOptions {
 }
 
 /**
- * Only real multi-step tasks deserve the loop — a greeting or a one-line
- * question must stay on the fast path (the loop costs several model calls).
+ * The agent loop is now the DEFAULT path for every real request. Only trivial
+ * chatter (greetings, thanks, one-word replies) stays on the fast path, because
+ * there is nothing to plan or verify there.
  */
+const SMALL_TALK =
+  /^(hi|hey|hello|yo|thanks?|thank you|ok(ay)?|cool|nice|great|good (morning|night|evening)|bye|سلام|السلام عليكم|ازيك|إزيك|شكرا|شكراً|تمام|حاضر|اوك|أوك|ايوه|أيوه|ماشي|صباح الخير|مساء الخير|باي)[\s!.،؟?ـ]*$/i;
+
 export function shouldRunManusLoop(text: string, chatMode: string): boolean {
-  if (chatMode !== "normal") return false;
+  if (chatMode === "deep-research") return false;
   const q = (text || "").trim();
-  if (q.length < 40) return false;
-  const hints =
-    /(research|analy[sz]e|compare|plan|strategy|build|write a|report|audit|find (me|all)|step by step|روadmap|خطة|ابحث|قارن|حلل|تقرير|استراتيجية|دراسة|اعمل لي|خطوات)/i;
-  const multi = q.split(/[.!؟?\n]/).filter((s) => s.trim().length > 12).length >= 2;
-  return hints.test(q) || multi;
+  if (!q || q.length < 12) return false;
+  if (SMALL_TALK.test(q)) return false;
+  return true;
 }
+
+/** Heavier tasks get more room; simple asks stay quick. */
+export function manusStepBudget(text: string): number {
+  const q = (text || "").trim();
+  const heavy =
+    /(research|analy[sz]e|compare|strategy|report|audit|roadmap|step by step|خطة|ابحث|قارن|حلل|تقرير|استراتيجية|دراسة|خطوات)/i;
+  if (heavy.test(q) || q.length > 400) return 8;
+  if (q.length > 120) return 6;
+  return 4;
+}
+
 
 const clip = (s: string, n = 2_000) => (s.length > n ? `${s.slice(0, n)}\n…[truncated]` : s);
 
