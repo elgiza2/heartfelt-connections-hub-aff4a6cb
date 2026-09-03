@@ -15,6 +15,8 @@ import { createComputerTask, pollComputerTask } from "@/lib/computer/client";
 export interface CloudAgentAnswer {
   text: string;
   steps: string[];
+  /** Task the answer came from, so the UI can show the computer surface. */
+  taskId?: string | null;
 }
 
 export interface CloudAgentOptions {
