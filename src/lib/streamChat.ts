@@ -15,6 +15,26 @@ function deepThinkingEnabled(): boolean {
 
 export const GUEST_QUOTA_ERROR = "GUEST_QUOTA_EXCEEDED";
 
+/**
+ * Upstream errors arrive as raw provider JSON. Turn the ones users can act on
+ * into one clear sentence instead of a wall of provider text.
+ */
+function friendlyUpstreamError(raw: string): string {
+  if (/Arrearage|overdue.?payment|in good standing|insufficient.?balance|quota.?exceeded/i.test(raw)) {
+    return "رصيد مزوّد الموديلات (Alibaba Model Studio) منتهي أو الحساب متوقف عن السداد — اشحن الحساب أو أضف مفتاحًا جديدًا وهيرجع الشات فورًا.";
+  }
+  if (/invalid.?api.?key|Unauthorized|InvalidApiKey/i.test(raw)) {
+    return "مفتاح مزوّد الموديلات غير صالح — حدّث المفتاح في الإعدادات.";
+  }
+  if (/rate.?limit|Throttling|429/i.test(raw)) {
+    return "ضغط مؤقت على مزوّد الموديلات — جرّب تاني بعد لحظات.";
+  }
+  const clean = raw.trim();
+  return clean.length > 200 || /^\s*[{[]/.test(clean)
+    ? "الشات مش متاح مؤقتًا. جرّب تاني."
+    : clean;
+}
+
 type MsgContent = string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
 type Msg = { role: "user" | "assistant"; content: MsgContent };
 
