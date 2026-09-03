@@ -1467,13 +1467,7 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
               budgetMs: 300_000,
               signal: controller.signal,
               onStep: (title) => {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.clientId === `assistant-${localTurnId}`
-                      ? { ...m, content: m.content, thinkingLabel: title }
-                      : m,
-                  ),
-                );
+                setToolActivity({ name: "browser", appSlug: "browser", status: "running", target: title });
               },
             });
             if (answer?.text) {
@@ -1481,7 +1475,7 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
               setMessages((prev) =>
                 prev.map((m) =>
                   m.clientId === `assistant-${localTurnId}`
-                    ? { ...m, content: answer.text, thinkingLabel: undefined }
+                    ? { ...m, content: answer.text }
                     : m,
                 ),
               );
