@@ -534,9 +534,10 @@ export async function streamChat({
 
     const handlePayload = (parsed: any) => {
       if (parsed.error) {
-        onError?.(String(parsed.error));
+        onError?.(friendlyUpstreamError(String(parsed.error)));
         return;
       }
+
       if (parsed.event && typeof parsed.event === "string") onEvent?.(parsed);
       // Surface tool activity (tool_call / tool_result) as a synthetic event
       // so the chat UI can render brand icons + action text inline.
