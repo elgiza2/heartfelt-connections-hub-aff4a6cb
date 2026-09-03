@@ -27,19 +27,36 @@ interface Admin {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Browser Use key: DB pool first (rotatable), then the function secret. */
+/** Browser Use key: both DB pools first (rotatable), then the function secret. */
 async function buKey(admin: Admin | null): Promise<string | null> {
   if (admin) {
-    const { data } = await admin
-      .from("provider_api_keys")
-      .select("api_key")
-      .eq("provider", "c")
-      .eq("status", "active")
-      .order("last_used_at", { ascending: true, nullsFirst: true })
-      .limit(1)
-      .maybeSingle();
-    const key = (data as { api_key?: string } | null)?.api_key?.trim();
-    if (key && key.length > 12) return key;
+    const [{ data: dedicated }, { data: shared }] = await Promise.all([
+      admin
+        .from("manus_keys")
+        .select("api_key,priority,last_used_at,cooldown_until")
+        .eq("status", "active")
+        .order("priority", { ascending: false })
+        .order("last_used_at", { ascending: true, nullsFirst: true })
+        .limit(10),
+      admin
+        .from("provider_api_keys")
+        .select("api_key,last_used_at")
+        .eq("provider", "c")
+        .eq("status", "active")
+        .order("last_used_at", { ascending: true, nullsFirst: true })
+        .limit(10),
+    ]);
+    const now = Date.now();
+    const keys = [
+      ...((dedicated ?? []) as Array<{ api_key?: string; cooldown_until?: string | null }>).filter(
+        (row) => !row.cooldown_until || new Date(row.cooldown_until).getTime() <= now,
+      ),
+      ...((shared ?? []) as Array<{ api_key?: string }>),
+    ];
+    for (const row of keys) {
+      const key = row.api_key?.trim();
+      if (key && key.length > 12) return key;
+    }
   }
   return Deno.env.get("BROWSER_USE_API_KEY")?.trim() || null;
 }
@@ -192,7 +209,6 @@ export async function runCloudAgent(
   if (key) {
     const result = await runBrowserUse(key, goal, budgetMs, options.onStep);
     if (result?.text) return result;
-    if (result) return result;
   }
   for (const hb of await hbKeys(admin)) {
     const result = await runHyperbrowser(hb, goal, budgetMs, options.onStep);
