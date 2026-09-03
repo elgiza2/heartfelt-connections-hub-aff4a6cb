@@ -156,10 +156,10 @@ Rules: never invent sources; open pages before trusting snippets; at most ${maxS
       } else if (tool === "remember_fact") {
         const key = String(args.key ?? "").trim();
         const value = String(args.value ?? "").trim();
-        if (key && value && opts.userId) {
+        if (key && value) {
           const { error } = await supabase
-            .from("user_memories")
-            .upsert({ user_id: opts.userId, key, value } as never, { onConflict: "user_id,key" } as never);
+            .from("memories")
+            .insert({ key, value } as never);
           ok = !error;
           output = error ? `Memory not stored: ${error.message}` : `Remembered ${key}.`;
         } else {
