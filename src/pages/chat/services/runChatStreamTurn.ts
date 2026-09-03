@@ -1666,7 +1666,6 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
         } catch {}
       })();
       isSubmittingRef.current = false;
-    },
-    signal: controller.signal,
-  });
+  }
 }
+
