@@ -1501,6 +1501,12 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
           } catch {
             /* fall through to the normal error path */
           }
+          // No answer: remove the live task card before showing the error.
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.clientId === `assistant-${localTurnId}` ? { ...m, computerTaskId: undefined } : m,
+            ),
+          );
           failTurnWithError(err);
         })();
         return;
