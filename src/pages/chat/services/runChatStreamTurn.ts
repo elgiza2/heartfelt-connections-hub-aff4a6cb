@@ -597,7 +597,56 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
     }
   }
 
+  /**
+   * Manus-style agent loop. It runs in the tab against the deployed
+   * `chat-alibaba` function (Alibaba / Qwen models), because the Edge Function
+   * deploy channel is unavailable — same behaviour, no deploy needed.
+   */
+  if (!isDeepResearch) {
+    try {
+      const { shouldRunManusLoop, runManusLoop } = await import("@/lib/manusLoop");
+      if (shouldRunManusLoop(lastUserText, String(chatMode))) {
+        setIsThinking(true);
+        setSearchStatus("Planning");
+        const result = await runManusLoop({
+          userText: lastUserText,
+          context: researchContext,
+          userId: chatUserId,
+          conversationId: backgroundCid || conversationId,
+          signal: controller.signal,
+          onTodo: (items) => {
+            setParallelTasks(
+              items.map((item, index) => ({
+                id: `todo-${index}`,
+                name: item.title,
+                status: item.done ? ("done" as const) : ("running" as const),
+              })),
+            );
+          },
+          onStep: (label, detail) => {
+            setToolActivity({ name: label, status: "running" });
+            narrate(`${label}: ${detail.slice(0, 160)}`);
+          },
+        });
+        if (result) {
+          researchSources = [...researchSources, ...result.sources].slice(0, 40);
+          const lastMsg = allMessages[allMessages.length - 1];
+          if (typeof lastMsg.content === "string") {
+            lastMsg.content = `${lastMsg.content}\n\n${result.evidence}`;
+          } else if (Array.isArray(lastMsg.content)) {
+            lastMsg.content.push({ type: "text" as const, text: result.evidence });
+          }
+        }
+      }
+    } catch {
+      // The loop is an enhancement — a failure must never block the reply.
+    } finally {
+      resetToolUi();
+    }
+  }
+
   await streamChat({
+
     localPipeline: researchPipeline,
     messages: allMessages,
 
