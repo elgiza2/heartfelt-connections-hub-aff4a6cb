@@ -604,7 +604,7 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
    */
   if (!isDeepResearch) {
     try {
-      const { shouldRunManusLoop, runManusLoop } = await import("@/lib/manusLoop");
+      const { shouldRunManusLoop, manusStepBudget, runManusLoop } = await import("@/lib/manusLoop");
       if (shouldRunManusLoop(lastUserText, String(chatMode))) {
         setIsThinking(true);
         setSearchStatus("Planning");
@@ -613,6 +613,7 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
           context: researchContext,
           userId: chatUserId,
           conversationId: backgroundCid || conversationId,
+          maxSteps: manusStepBudget(lastUserText),
           signal: controller.signal,
           onTodo: (items) => {
             setParallelTasks(
