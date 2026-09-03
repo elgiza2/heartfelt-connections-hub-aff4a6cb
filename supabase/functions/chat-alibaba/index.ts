@@ -11,6 +11,8 @@ import type { PlannerCall, RawCall } from "./research.ts";
 import { profileModels, profileSystem, routeProfile } from "./router.ts";
 import { type CallFn, deliveryContract } from "./orchestrator.ts";
 import { runPrimaryAgent } from "./manus.ts";
+import { runCloudAgent } from "../_shared/cloudAgents.ts";
+
 
 
 const headers = {
