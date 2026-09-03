@@ -66,24 +66,24 @@ export function ToolCard({ part, userId }: { part: ToolPart; userId?: string | n
 
   return (
     <div
-      className={`my-2 w-full max-w-[640px] overflow-hidden rounded-2xl border text-[13px] ${
+      className={`my-1.5 w-full max-w-[600px] overflow-hidden rounded-xl border text-[12.5px] ${
         needsApproval
           ? "border-amber-400/40 bg-amber-500/5"
           : failed
             ? "border-destructive/30 bg-destructive/5"
-            : "border-foreground/10 bg-foreground/[0.04]"
+            : "border-foreground/10 bg-foreground/[0.03]"
       }`}
     >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-start transition-colors hover:bg-foreground/5"
+        className="flex w-full items-center gap-2 px-2.5 py-2 text-start transition-colors hover:bg-foreground/5"
         aria-expanded={open}
       >
         <span
-          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-background/60 ${meta.tint}`}
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-current/10 ring-1 ring-current/15 ${meta.tint}`}
         >
-          <Icon className="h-4 w-4" strokeWidth={1.9} />
+          <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
