@@ -552,8 +552,10 @@ export async function streamChat({
       if (hdrModel) onModel?.(hdrModel);
     } catch { /* ignore */ }
 
+    let terminalStreamError = false;
     const handlePayload = (parsed: any) => {
       if (parsed.error) {
+        terminalStreamError = true;
         onError?.(friendlyUpstreamError(String(parsed.error)));
         return;
       }
@@ -681,7 +683,10 @@ export async function streamChat({
       return;
     }
 
-    await onDone();
+    // The error callback may launch an asynchronous fallback agent. Running
+    // onDone as well races that fallback, fills the assistant bubble with the
+    // empty-response placeholder and can save it before the fallback finishes.
+    if (!terminalStreamError) await onDone();
   } catch (e: any) {
     if (e?.name === "AbortError") {
       await onDone();
