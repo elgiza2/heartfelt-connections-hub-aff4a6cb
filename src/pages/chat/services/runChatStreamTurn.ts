@@ -1453,8 +1453,59 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
       }
     },
     onError: (err) => {
+      // A failed text-model stream is not the end of the turn: the cloud
+      // browser agents can answer it on their own (they bring their own model),
+      // so try them before showing any error to the user.
+      const isGuest = err === GUEST_QUOTA_ERROR;
+      if (!isGuest && !assistantContent.trim()) {
+        void (async () => {
+          try {
+            const { runCloudAgentAnswer } = await import("@/lib/cloudAgentAnswer");
+            const cid = await conversationPromise;
+            const answer = await runCloudAgentAnswer(userInput || "", {
+              conversationId: cid,
+              budgetMs: 300_000,
+              signal: controller.signal,
+              onStep: (title) => {
+                setToolActivity({ name: "browser", appSlug: "browser", status: "running", target: title });
+              },
+            });
+            if (answer?.text) {
+              assistantContent = answer.text;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.clientId === `assistant-${localTurnId}`
+                    ? { ...m, content: answer.text }
+                    : m,
+                ),
+              );
+              setIsThinking(false);
+              setIsLoading(false);
+              resetToolUi();
+              settleRunningTools("done");
+              isSubmittingRef.current = false;
+              if (cid) {
+                const savedId = await saveMessage(cid, "assistant", answer.text);
+                if (savedId) ownInsertedIdsRef.current.add(savedId);
+              }
+              return;
+            }
+          } catch {
+            /* fall through to the normal error path */
+          }
+          failTurnWithError(err);
+        })();
+        return;
+      }
+      failTurnWithError(err);
+    },
+    signal: controller.signal,
+  });
+
+  function failTurnWithError(err: string) {
       hadStreamError = true;
       if (assistantRenderTimer) clearTimeout(assistantRenderTimer);
+
 
       const isGuestQuota = err === GUEST_QUOTA_ERROR;
       if (isGuestQuota) {
@@ -1609,7 +1660,6 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
         } catch {}
       })();
       isSubmittingRef.current = false;
-    },
-    signal: controller.signal,
-  });
+  }
 }
+

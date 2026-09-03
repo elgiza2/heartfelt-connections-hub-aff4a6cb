@@ -11,6 +11,8 @@ import type { PlannerCall, RawCall } from "./research.ts";
 import { profileModels, profileSystem, routeProfile } from "./router.ts";
 import { type CallFn, deliveryContract } from "./orchestrator.ts";
 import { runPrimaryAgent } from "./manus.ts";
+import { runCloudAgent } from "../_shared/cloudAgents.ts";
+
 
 
 const headers = {
@@ -406,10 +408,42 @@ Deno.serve(async (req) => {
             ? await result.response.text().catch(() => "")
             : "";
           if (detail) console.error(`chat-alibaba fallback [${result?.response.status}]: ${detail.slice(0, 500)}`);
-          send({ error: detail || "Chat service temporarily unavailable" });
+
+          // No text model available → run the turn on the cloud browser agents
+          // (Browser Use, then Hyperbrowser). They bring their own LLM, so the
+          // user still gets a complete answer with live evidence.
+          send({ status: "thinking", agent: profile.id, agent_label: profile.labelAr, engine: "cloud-agent" });
+          const goal = [
+            system,
+            liveContext,
+            agentContext,
+            "Conversation so far (answer the LAST user message):",
+            messages
+              .map((m) => `${m.role.toUpperCase()}: ${typeof m.content === "string" ? m.content : JSON.stringify(m.content)}`)
+              .join("\n")
+              .slice(-8000),
+            "Browse the web only when the answer needs fresh facts. Reply with the final answer only, in the user's language.",
+          ].filter(Boolean).join("\n\n");
+
+          const agentRun = await runCloudAgent(admin, goal, {
+            budgetMs: 240_000,
+            onStep: (step) => send({ tool_event: { name: "browser", title: step.title, url: step.url ?? undefined } }),
+          }).catch((error) => {
+            console.error("cloud agent failed", error);
+            return null;
+          });
+
+          if (agentRun?.text) {
+            if (agentRun.liveUrl) send({ live_url: agentRun.liveUrl, provider: agentRun.provider });
+            send({ choices: [{ delta: { content: agentRun.text }, index: 0, finish_reason: null }] });
+            send({ choices: [{ delta: {}, index: 0, finish_reason: "stop" }] });
+          } else {
+            send({ error: "Chat service temporarily unavailable" });
+          }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           return;
         }
+
 
         const usedModel = result.model ?? models[0];
         send({ status: "thinking", model: usedModel, agent: profile.id });
